@@ -1,4 +1,4 @@
-package com.zwendo.knot8.gradle
+package com.zwendo.knot8.plugin
 
 fun main() {
     println("Hello world !")
