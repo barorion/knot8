@@ -1,2 +1,1 @@
-rootProject.name = "knot8-compiler-plugin"
-
+rootProject.name = "knot8-plugin"
