@@ -1,6 +1,5 @@
 package com.zwendo.knot8.plugin
 
-import com.zwendo.knot8.plugin.Consts.API_VERSION
 import com.zwendo.knot8.plugin.adapter.annotation.NOT_ZERO
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
