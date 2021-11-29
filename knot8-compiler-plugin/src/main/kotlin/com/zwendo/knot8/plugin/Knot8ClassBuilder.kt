@@ -3,13 +3,19 @@ package com.zwendo.knot8.plugin
 import org.jetbrains.kotlin.codegen.ClassBuilder
 import org.jetbrains.kotlin.codegen.DelegatingClassBuilder
 import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
-import org.jetbrains.org.objectweb.asm.*
-import org.jetbrains.org.objectweb.asm.Opcodes.*
+import org.jetbrains.org.objectweb.asm.MethodVisitor
 
-internal class Knot8ClassBuilder(private val delegateBuilder: ClassBuilder, val configuration: CompilerConfiguration) :
+internal class Knot8ClassBuilder internal constructor(
+    private val delegateBuilder: ClassBuilder,
+    val configuration: CompilerConfiguration
+) :
     DelegatingClassBuilder() {
+
+    internal enum class MethodType {
+        METHOD,
+        CONSTRUCTOR
+    }
 
     override fun getDelegate(): ClassBuilder = delegateBuilder
 
@@ -22,10 +28,11 @@ internal class Knot8ClassBuilder(private val delegateBuilder: ClassBuilder, val 
         exceptions: Array<out String>?
     ): MethodVisitor {
         val original = super.newMethod(origin, access, name, desc, signature, exceptions)
-        return Knot8MethodVisitor(original)
+        val type: MethodType = when (name) {
+            "<init>" -> MethodType.CONSTRUCTOR
+            else -> MethodType.METHOD
+        }
+        return Knot8MethodVisitor(original, type)
     }
 
 }
-
-
-
