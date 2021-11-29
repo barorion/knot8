@@ -32,6 +32,6 @@ class Knot8IllegalAnnotationAttributeException internal constructor(
  *
  * @param target the illegal target involved in this exception
  */
-class Knot8IllegalAnnotationTargetException internal constructor(target: Target) :
+class Knot8IllegalAnnotationTargetException internal constructor(target: AnnotationTarget) :
     Knot8Exception("illegal annotation target: $target")
 
