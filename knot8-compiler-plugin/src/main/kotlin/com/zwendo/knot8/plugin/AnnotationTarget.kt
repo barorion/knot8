@@ -2,7 +2,10 @@ package com.zwendo.knot8.plugin
 
 import java.util.Locale
 
-enum class Target {
+/**
+ * Represents an annotation target.
+ */
+enum class AnnotationTarget {
     FIELD,
     METHOD,
     PARAMETER,
