@@ -21,8 +21,7 @@ sealed class Knot8Exception(message: String) : Exception(message)
 class Knot8IllegalAnnotationAttributeException internal constructor(
     annotationName: String,
     invalidAttributeName: String
-) :
-    Knot8Exception("$annotationName annotation has no attribute named: $invalidAttributeName")
+) : Knot8Exception("$annotationName annotation has no attribute named: $invalidAttributeName")
 
 /**
  * Knot8 exception thrown when an annotation is used on an illegal target. Probably due to the presence of an
@@ -32,6 +31,14 @@ class Knot8IllegalAnnotationAttributeException internal constructor(
  *
  * @param target the illegal target involved in this exception
  */
-class Knot8IllegalAnnotationTargetException internal constructor(target: AnnotationTarget) :
-    Knot8Exception("illegal annotation target: $target")
+class Knot8IllegalAnnotationTargetException internal constructor(annotationName: String, target: AnnotationTarget) :
+    Knot8Exception("Illegal annotation target, annotation $annotationName doesn't support $target.")
 
+class Knot8IllegalAnnotationTargetTypeException internal constructor(annotationName: String, targetFqName: String) :
+    Knot8Exception(
+        "Illegal annotation target type, annotation $annotationName doesn't support ${
+            targetFqName.replace(
+                "/",
+                "."
+            )
+        } type.")
