@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.6.0"
     `maven-publish`
+    java
 }
 
 group = "com.zwendo"
@@ -16,6 +17,11 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.0")
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -23,7 +29,6 @@ publishing {
             groupId = project.group.toString()
             artifactId = project.name.toLowerCase()
             version = project.version.toString()
-
             pom {
                 name.set(project.name)
 

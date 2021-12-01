@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm") version "1.6.0"
     id("java-gradle-plugin")
     `maven-publish`
-
+    java
 }
 
 group = "com.zwendo"
@@ -13,9 +13,14 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin-api:1.6.0")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin-api:1.6.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.0")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 gradlePlugin {
