@@ -5,11 +5,11 @@ import org.jetbrains.org.objectweb.asm.Opcodes
 // Project ASM api version
 internal const val API_VERSION: Int = Opcodes.ASM9
 
-// Project group id in bytecode version
-internal const val BYTECODE_GROUP: String = "com/zwendo/"
+// Project group id
+internal const val GROUP_INTERNAL_NAME: String = "com/zwendo/"
 
-// Project root project in bytecode
-internal const val BYTECODE_PROJECT: String = "knot8/"
+// Project root package
+internal const val PROJECT_INTERNAL_NAME: String = "knot8/"
 
-// Project annotations path in bytecode
-internal const val BYTECODE_ANNOTATIONS_PATH: String = BYTECODE_GROUP + BYTECODE_PROJECT + "annotation/"
+// Project annotations package internal name
+internal const val ANNOTATIONS_INTERNAL_NAME: String = "$GROUP_INTERNAL_NAME${PROJECT_INTERNAL_NAME}annotation/"
