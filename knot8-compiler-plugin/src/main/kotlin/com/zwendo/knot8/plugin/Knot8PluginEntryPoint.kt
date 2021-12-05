@@ -47,7 +47,7 @@ internal class Knot8ComponentRegistrar : ComponentRegistrar {
 }
 
 /**
- * Class that intercepts class generation and modifies the class builder factory to add kn8t logic
+ * Class that intercepts class generation and modifies the class builder factory to add knot8 logic
  */
 internal class Knot8ClassGenerationInterceptor(val configuration: CompilerConfiguration) :
     ClassBuilderInterceptorExtension {
