@@ -12,7 +12,6 @@ import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 
 internal val KEY_ENABLED: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey<Boolean>("enabled")
-internal val KEY_DEBUG: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey<Boolean>("debug")
 
 /**
  * Class that process command line when plugin is used
@@ -21,7 +20,6 @@ internal class Knot8CommandLineProcessor : CommandLineProcessor {
     override val pluginId = "knot8"
     override val pluginOptions: Collection<AbstractCliOption> = listOf(
         CliOption("enabled", "<true|false>", "whether plugin is enabled"),
-        CliOption("debug", "<true|false>", "enable debug log")
     )
 
     override fun processOption(
@@ -30,7 +28,6 @@ internal class Knot8CommandLineProcessor : CommandLineProcessor {
         configuration: CompilerConfiguration
     ) = when (option.optionName) {
         "enabled" -> configuration.put(KEY_ENABLED, value.toBooleanStrict())
-        "debug" -> configuration.put(KEY_DEBUG, value.toBooleanStrict())
         else -> throw CliOptionProcessingException("Unexpected option: ${option.optionName}")
     }
 }

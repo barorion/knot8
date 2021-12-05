@@ -18,10 +18,9 @@ class Knot8GradlePlugin : KotlinCompilerPluginSupportPlugin {
         val extension = project.extensions.findByType(Knot8Configuration::class.java) ?: Knot8Configuration()
 
         val isEnabled = SubpluginOption("enabled", extension.enabled.toString())
-        val isDebugEnabled = SubpluginOption("debug", extension.debug.toString())
 
         return project.provider {
-            listOf(isEnabled, isDebugEnabled)
+            listOf(isEnabled)
         }
     }
 
@@ -36,5 +35,4 @@ class Knot8GradlePlugin : KotlinCompilerPluginSupportPlugin {
 
 open class Knot8Configuration {
     var enabled: Boolean = true
-    var debug: Boolean = false
 }
