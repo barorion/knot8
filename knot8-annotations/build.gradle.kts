@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "1.6.0"
-    id("com.zwendo.knot8") version "0.1.0"
     `maven-publish`
     java
 }
