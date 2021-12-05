@@ -4,7 +4,16 @@ import org.jetbrains.org.objectweb.asm.Opcodes
 import org.jetbrains.org.objectweb.asm.Type
 
 
-private val primitiveTypes = setOf("Z", "C", "B", "S", "I", "F", "J", "D")
+private val primitiveTypes = hashMapOf(
+    "Z" to "boolean",
+    "C" to "char",
+    "B" to "byte",
+    "S" to "short",
+    "I" to "int",
+    "F" to "float",
+    "J" to "long",
+    "D" to "double"
+)
 
 internal fun Type.isPrimitive(): Boolean = primitiveTypes.contains(internalName)
 
@@ -30,3 +39,9 @@ internal fun Type.isIntOrEquivalent(): Boolean = when (sort) {
     Type.CHAR -> true
     else -> false
 }
+
+private fun Int.hasFlags(flags: Int): Boolean = this and flags == flags
+
+internal fun Int.hasFlags(vararg flags: Int): Boolean = hasFlags(flags.sum())
+
+internal fun String.fqName() = primitiveTypes.getOrDefault(this, this.replace("/", "."))
