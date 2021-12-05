@@ -3,6 +3,8 @@ package com.zwendo.knot8.plugin
 import com.zwendo.knot8.plugin.assertion.NumberAssertion
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
+import org.jetbrains.org.objectweb.asm.Opcodes
+import org.jetbrains.org.objectweb.asm.Type
 
 internal class Knot8MethodVisitor(
     private val original: MethodVisitor,
@@ -47,7 +49,7 @@ internal class Knot8MethodVisitor(
         parameter: FunctionParameter,
     ): AnnotationVisitor {
         val annotationProvider = nameToAnnotationVisitor[descriptor] ?: return default
-        val data = AnnotationVisitorData(target, this, default, paramIndex, visible, parameter, access)
+        val data = AnnotationVisitorData(target, this, default, visible, parameter, access)
         return annotationProvider(data)
     }
 
@@ -64,10 +66,9 @@ internal data class AnnotationVisitorData(
     val target: AnnotationTarget,
     val knot8MethodVisitor: Knot8MethodVisitor,
     val default: AnnotationVisitor,
-    val paramIndex: Int,
-    val visible: Boolean,
+    val isMethodVisible: Boolean,
     val parameter: FunctionParameter,
-    val access: Int,
+    val methodAccess: Int,
 )
 
 private typealias AnnotationVisitorFunction = (AnnotationVisitorData) -> AnnotationVisitor

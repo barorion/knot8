@@ -10,10 +10,9 @@ internal class NumberAssertion private constructor(
 ) : AbstractAssertionAnnotation(
     data,
     assertion.annotationName,
-    assertion.errorMessage,
+    "${data.parameter.name} ${assertion.errorMessage}",
     TARGETS
 ) {
-    private val offset = if (data.access.hasFlags(Opcodes.ACC_STATIC)) 0 else 1
 
     /**
      * Represents the different number assertions.
@@ -33,7 +32,7 @@ internal class NumberAssertion private constructor(
         POSITIVE_OR_ZERO(Opcodes.IFGE, "PosOrZero", "positive or zero", "negative"),
         POSITIVE(Opcodes.IFGT, "Positive", "positive", "negative or zero");
 
-        val errorMessage = "$annotationName is marked as $rule but is $illegalStateName."
+        val errorMessage = "is marked as $rule but is $illegalStateName."
         val descriptor = "L${ANNOTATIONS_INTERNAL_NAME}$annotationName;"
     }
 
@@ -64,7 +63,7 @@ internal class NumberAssertion private constructor(
         if (!type.isPrimitive()) { // asserts that type is primitive
             throw Knot8IllegalAnnotationTargetTypeException(assertion.annotationName, type.internalName)
         }
-        visitVarInsn(type.getOpcode(Opcodes.ILOAD), data.paramIndex + offset) // load parameter
+        visitVarInsn(type.getOpcode(Opcodes.ILOAD), data.parameter.index) // load parameter
         if (!type.isIntOrEquivalent()) { // if necessary compare to type corresponding 0
             visitInsn(type.getConstZeroOpCode())
             visitInsn(type.getCmpOpCode())
