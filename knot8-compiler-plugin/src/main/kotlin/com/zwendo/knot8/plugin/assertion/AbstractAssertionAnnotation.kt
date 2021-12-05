@@ -29,7 +29,7 @@ internal abstract class AbstractAssertionAnnotation(
      * @param visitor the visitor to use to modify bytecode
      * @return true if the method should be unregistered after it has been called ; false otherwise
      */
-    private fun writeAssertion(visitor: MethodVisitor): Boolean = with (visitor) {
+    private fun writeAssertion(visitor: MethodVisitor): Unit = with (visitor) {
         val valueIsOk = writeAssertionTest(visitor)
         val iaeInternalName: String = Type.getInternalName(IllegalArgumentException::class.java)
         visitTypeInsn(Opcodes.NEW, iaeInternalName)
@@ -38,7 +38,6 @@ internal abstract class AbstractAssertionAnnotation(
         visitMethodInsn(Opcodes.INVOKESPECIAL, iaeInternalName, "<init>", "(Ljava/lang/String;)V", false)
         visitInsn(Opcodes.ATHROW)
         visitLabel(valueIsOk)
-        return true
     }
 
     protected abstract fun writeAssertionTest(visitor: MethodVisitor): Label
@@ -52,7 +51,7 @@ internal abstract class AbstractAssertionAnnotation(
     override fun visit(name: String?, value: Any?): Nothing = throwAttributeError(name)
 
     override fun visitEnd() {
-        data.knot8MethodVisitor.onVisitCode.add(this::writeAssertion) // registers assertion writing
+        data.knot8MethodVisitor.onMethodEnter.add(this::writeAssertion) // registers assertion writing
         data.default.visitEnd()
     }
 }
