@@ -89,3 +89,24 @@ internal fun String.internalToFqName() = primitiveTypes.getOrDefault(this, this.
  * @return the descriptor corresponding to [this]
  */
 internal fun String.fqNameToDescriptor() = "L${this.replace(".", "/")};"
+
+/**
+ * Converts [this] (a class internal name) to a descriptor.
+ *
+ * @return the descriptor corresponding to [this]
+ */
+internal fun String.internalToDescriptor() = "L$this;"
+
+internal fun String.fqNameToInternal() = this.replace(".", "/")
+
+internal fun Class<out Any>.doesExtends(`class`: Class<out Any>): Boolean {
+    return (this == `class`) or (superclass?.doesExtends(`class`) ?: false)
+}
+
+internal fun Class<out Any>.findFirstInterface(interfaces: Collection<Class<out Any>>): Class<out Any>? {
+    return if (interfaces.contains(this)) {
+        this
+    } else {
+        this.interfaces.find { it.findFirstInterface(interfaces) != null }
+    }
+}

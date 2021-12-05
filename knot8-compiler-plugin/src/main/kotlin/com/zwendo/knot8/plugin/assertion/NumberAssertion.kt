@@ -33,7 +33,7 @@ internal class NumberAssertion private constructor(
         POSITIVE(Opcodes.IFGT, "Positive", "positive", "negative or zero");
 
         val errorMessage = "is marked as $rule but is $illegalStateName."
-        val descriptor = "L${ANNOTATIONS_INTERNAL_NAME}$annotationName;"
+        val descriptor = "${ANNOTATIONS_INTERNAL_NAME}$annotationName".internalToDescriptor()
     }
 
     init {
@@ -47,9 +47,9 @@ internal class NumberAssertion private constructor(
         private val TARGETS = setOf(AnnotationTarget.PARAMETER)
         private val VALID_TYPES = setOf("B", "S", "I", "F", "J", "D")
 
-        val NOT_ZERO_NAME = Type.NOT_ZERO.descriptor
-        val POSITIVE_OR_ZERO_NAME = Type.POSITIVE_OR_ZERO.descriptor
-        val POSITIVE_NAME = Type.POSITIVE.descriptor
+        val NOT_ZERO_DESCRIPTOR = Type.NOT_ZERO.descriptor
+        val POSITIVE_OR_ZERO_DESCRIPTOR = Type.POSITIVE_OR_ZERO.descriptor
+        val POSITIVE_DESCRIPTOR = Type.POSITIVE.descriptor
 
         fun notZero(data: Knot8AnnotationVisitorData) = NumberAssertion(data, Type.NOT_ZERO)
 

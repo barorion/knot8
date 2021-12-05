@@ -1,5 +1,6 @@
 package com.zwendo.knot8.plugin
 
+import com.zwendo.knot8.plugin.assertion.NotEmptyAssertion
 import com.zwendo.knot8.plugin.assertion.NumberAssertion
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
@@ -9,18 +10,13 @@ import org.jetbrains.org.objectweb.asm.MethodVisitor
  * annotations.
  */
 internal class Knot8MethodVisitor(
-    private val original: MethodVisitor,
-    private val access: Int,
-    private val name: String,
-    private val desc: String,
-    private val signature: String,
-    private val exceptions: Array<out String>,
+    private val data: Knot8MethodVisitorData,
     private val parameters: List<FunctionParameter>,
-) : MethodVisitor(API_VERSION, original) {
+) : MethodVisitor(API_VERSION, data.original) {
     var onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
         private set
     private var isInitialized = false
-    private val methodKind: MethodKind = MethodKind.getKind(name, access)
+    private val methodKind: MethodKind = MethodKind.getKind(data.methodName, data.methodAccess)
 
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)
@@ -63,7 +59,7 @@ internal class Knot8MethodVisitor(
      * unregister them.
      */
     private fun onMethodEnter() {
-        onMethodEnter.forEach { it(original) }
+        onMethodEnter.forEach { it(data.original) }
         onMethodEnter = mutableListOf()
     }
 
@@ -75,15 +71,16 @@ internal class Knot8MethodVisitor(
         parameter: FunctionParameter,
     ): AnnotationVisitor {
         val annotationProvider = nameToAnnotationVisitor[descriptor] ?: return default
-        val data = Knot8AnnotationVisitorData(target, this, default, visible, parameter, access)
+        val data = Knot8AnnotationVisitorData(target, this, default, visible, parameter)
         return annotationProvider(data)
     }
 
     companion object {
         private val nameToAnnotationVisitor: Map<String, AnnotationVisitorFunction> = hashMapOf(
-            NumberAssertion.NOT_ZERO_NAME to { NumberAssertion.notZero(it) },
-            NumberAssertion.POSITIVE_OR_ZERO_NAME to { NumberAssertion.positiveOrZero(it) },
-            NumberAssertion.POSITIVE_NAME to { NumberAssertion.positive(it) },
+            NumberAssertion.NOT_ZERO_DESCRIPTOR to { NumberAssertion.notZero(it) },
+            NumberAssertion.POSITIVE_OR_ZERO_DESCRIPTOR to { NumberAssertion.positiveOrZero(it) },
+            NumberAssertion.POSITIVE_DESCRIPTOR to { NumberAssertion.positive(it) },
+            NotEmptyAssertion.DESCRIPTOR to { NotEmptyAssertion(it) },
         )
     }
 }
@@ -96,7 +93,6 @@ internal class Knot8MethodVisitor(
  * @param knot8MethodVisitor the [Knot8MethodVisitor] associated to the annotation
  * @param default the default annotation visitor
  * @param isVisibleAtRuntime true if the annotation is visible at runtime; false otherwise
- * @param methodAccess the flags concerning the method access
  */
 internal data class Knot8AnnotationVisitorData(
     val target: AnnotationTarget,
@@ -104,7 +100,16 @@ internal data class Knot8AnnotationVisitorData(
     val default: AnnotationVisitor,
     val isVisibleAtRuntime: Boolean,
     val parameter: FunctionParameter,
+)
+
+internal data class Knot8MethodVisitorData(
+    val className: String,
+    val original: MethodVisitor,
     val methodAccess: Int,
+    val methodName: String,
+    val methodDesc: String,
+    val methodSignature: String?,
+    val methodExceptions: Array<out String>?,
 )
 
 private typealias AnnotationVisitorFunction = (Knot8AnnotationVisitorData) -> AnnotationVisitor

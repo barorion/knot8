@@ -2,6 +2,7 @@ package com.zwendo.knot8.plugin
 
 import org.jetbrains.kotlin.codegen.ClassBuilder
 import org.jetbrains.kotlin.codegen.DelegatingClassBuilder
+import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.org.objectweb.asm.MethodVisitor
@@ -12,6 +13,7 @@ internal class Knot8ClassBuilder(
     private val delegateBuilder: ClassBuilder,
     val configuration: CompilerConfiguration
 ) : DelegatingClassBuilder() {
+    private lateinit var currentClassName: String
 
     override fun getDelegate(): ClassBuilder = delegateBuilder
 
@@ -25,7 +27,21 @@ internal class Knot8ClassBuilder(
     ): MethodVisitor {
         val original = super.newMethod(origin, access, name, desc, signature, exceptions)
         val parameters = parameters(origin.descriptor.toString(), desc, MethodKind.getKind(name, access))
-        return Knot8MethodVisitor(original, access, name, desc, signature ?: "", exceptions ?: arrayOf(), parameters)
+        val data = Knot8MethodVisitorData(currentClassName, original, access, name, desc, signature, exceptions)
+        return Knot8MethodVisitor(data, parameters)
+    }
+
+    override fun defineClass(
+        origin: PsiElement?,
+        version: Int,
+        access: Int,
+        name: String,
+        signature: String?,
+        superName: String,
+        interfaces: Array<out String>
+    ) {
+        currentClassName = name
+        super.defineClass(origin, version, access, name, signature, superName, interfaces)
     }
 
     /**
