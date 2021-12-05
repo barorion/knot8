@@ -24,7 +24,7 @@ internal class Knot8ClassBuilder(
         exceptions: Array<out String>?
     ): MethodVisitor {
         val original = super.newMethod(origin, access, name, desc, signature, exceptions)
-        val parameters = parameters(origin.descriptor.toString(), desc, isThisInStack(access, name), name == "<init>")
+        val parameters = parameters(origin.descriptor.toString(), desc, MethodKind.getKind(name, access))
         return Knot8MethodVisitor(original, access, name, desc, signature ?: "", exceptions ?: arrayOf(), parameters)
     }
 
@@ -33,18 +33,16 @@ internal class Knot8ClassBuilder(
      *
      * @param detailedDesc the detailed descriptor of the method, containing param names
      * @param bytecodeDesc the bytecode version of the method descriptor
-     * @param isThisInStack true if 'this' is in the variables stack of the method; else otherwise
-     * @param isConstructor true if the current method is a constructor; false otherwise
+     * @param methodKind the current method kind
      * @return the list of [FunctionParameter] for the current method
      */
     private fun parameters(
         detailedDesc: String,
         bytecodeDesc: String,
-        isThisInStack: Boolean,
-        isConstructor: Boolean,
+        methodKind: MethodKind
     ): List<FunctionParameter> {
-        val types = typesList(detailedDesc, isThisInStack, isConstructor)
-        val names = namesList(isConstructor)
+        val types = typesList(detailedDesc, methodKind)
+        val names = namesList(methodKind)
 
         // add all types and names to lists
         types += Type.getArgumentTypes(bytecodeDesc).toMutableList()
@@ -61,27 +59,42 @@ internal class Knot8ClassBuilder(
         return parameters
     }
 
-    private fun typesList(desc: String, isThisInStack: Boolean, isConstructor: Boolean): MutableList<Type> {
-        val types = mutableListOf<Type>()
-        val typeName = if (isConstructor) { // this type is in the return type
+    /**
+     * Creates the list of parameters type for the current method. The purpose of this method is to
+     * add the type of this is the current method is an instance method or a constructor.
+     *
+     * @param desc the detailed descriptor of the current method
+     * @param methodKind the current method kind
+     * @return the list of the parameters types (empty or containing this)
+     */
+    private fun typesList(desc: String, methodKind: MethodKind): MutableList<Type> = when (methodKind) {
+        MethodKind.STATIC -> mutableListOf()
+        MethodKind.CONSTRUCTOR -> { // this type is in return type
             val start = "returnType:"
-            desc.substring(desc.indexOf(start) + start.length, desc.lastIndexOf("[") - 1)
-        } else { // this type is the first parameter
-            val start = "\$this:"
-            desc.substring(desc.indexOf(start) + start.length, desc.indexOf(","))
+            val fqName = desc.substring(desc.indexOf(start) + start.length, desc.lastIndexOf("[") - 1)
+            mutableListOf(Type.getType(fqName.fqNameToDescriptor()))
         }
-        types += Type.getType("L${typeName.replace(".", "/")};")
-        return types
+        MethodKind.INSTANCE -> { // this type is the first parameter type
+            val start = "\$this:"
+            val fqName = desc.substring(desc.indexOf(start) + start.length, desc.indexOf(","))
+            mutableListOf(Type.getType(fqName.fqNameToDescriptor()))
+        }
     }
 
-    private fun namesList(isConstructor: Boolean): MutableList<String> = if (isConstructor) {
+    /**
+     * Creates the list of parameters names for the current method. The purpose of this method is to
+     * add the type of this is the current method is a constructor (not for instance method, because it
+     * will be added automatically due to the presence of this in the parameters).
+     *
+     * @param methodKind the current method kind
+     * @return the list of the parameters names (empty or containing this)
+     */
+    private fun namesList(methodKind: MethodKind): MutableList<String> = when (methodKind) {
+        MethodKind.CONSTRUCTOR -> mutableListOf("\$this")
         // empty list, even if instance method because this is already in the detailed descriptor and will be added
-        mutableListOf()
-    } else {
-        mutableListOf("\$this")
+        MethodKind.INSTANCE,
+        MethodKind.STATIC -> mutableListOf()
     }
-
-    private fun isThisInStack(access: Int, name: String): Boolean = !access.hasFlags(Opcodes.ACC_STATIC)
 }
 
 /**
@@ -93,3 +106,41 @@ internal class Knot8ClassBuilder(
  * @param index the index of the parameter in the local variables stack
  */
 internal data class FunctionParameter(val name: String, val type: Type, val index: Int)
+
+/**
+ * Represents the 3 method kinds with different variable stacks and parameter related to 'this'.
+ */
+internal enum class MethodKind {
+    /**
+     * Stack -> no this
+     * Parameters -> no this
+     */
+    STATIC,
+    /**
+     * Stack -> this
+     * Parameters -> no this
+     */
+    CONSTRUCTOR,
+    /**
+     * Stack -> this
+     * Parameters -> this
+     */
+    INSTANCE;
+
+    companion object {
+        /**
+         * Compute the corresponding kind for a given function.
+         *
+         * @param name the name of the method
+         * @param access the access flags of the method
+         * @return the method kind of the method
+         */
+        fun getKind(name: String, access: Int) = if (name == "<init>") {
+            CONSTRUCTOR
+        } else if (access.hasFlags(Opcodes.ACC_STATIC)) {
+            STATIC
+        } else {
+            INSTANCE
+        }
+    }
+}

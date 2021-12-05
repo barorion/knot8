@@ -3,7 +3,6 @@ package com.zwendo.knot8.plugin
 import com.zwendo.knot8.plugin.assertion.NumberAssertion
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
-import org.jetbrains.org.objectweb.asm.Opcodes
 
 internal class Knot8MethodVisitor(
     private val original: MethodVisitor,
@@ -15,24 +14,13 @@ internal class Knot8MethodVisitor(
     private val parameters: List<FunctionParameter>,
 ) : MethodVisitor(API_VERSION, original) {
     val onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
-    private val methodType: MethodType
     private var isInitialized = false
-
-    // compute method type
-    init {
-        methodType = if (name == "<init>") {
-            MethodType.CONSTRUCTOR
-        } else if (access.hasFlags(Opcodes.ACC_STATIC)) {
-            MethodType.STATIC
-        } else {
-            MethodType.INSTANCE
-        }
-    }
+    private val methodKind: MethodKind = MethodKind.getKind(name, access)
 
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)
         // adds 1 when the is 'this' in stack
-        val paramIndex = if (methodType == MethodType.STATIC) parameter else parameter + 1
+        val paramIndex = if (methodKind == MethodKind.STATIC) parameter else parameter + 1
         return visitSpecificAnnotation(
             descriptor,
             AnnotationTarget.PARAMETER,
@@ -45,7 +33,7 @@ internal class Knot8MethodVisitor(
 
     override fun visitCode() {
         // waits for super constructor call
-        if (methodType != MethodType.CONSTRUCTOR) {
+        if (methodKind != MethodKind.CONSTRUCTOR) {
             onMethodEnter()
         }
         super.visitCode()
@@ -60,7 +48,7 @@ internal class Knot8MethodVisitor(
     ) {
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
         // notify observers right after super constructor call
-        if ((methodType == MethodType.CONSTRUCTOR) and !isInitialized) {
+        if ((methodKind == MethodKind.CONSTRUCTOR) and !isInitialized) {
             onMethodEnter()
             isInitialized = true
         }
@@ -87,12 +75,6 @@ internal class Knot8MethodVisitor(
             NumberAssertion.POSITIVE_OR_ZERO_NAME to { NumberAssertion.positiveOrZero(it) },
             NumberAssertion.POSITIVE_NAME to { NumberAssertion.positive(it) },
         )
-    }
-
-    private enum class MethodType {
-        STATIC,
-        CONSTRUCTOR,
-        INSTANCE,
     }
 }
 

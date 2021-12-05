@@ -44,4 +44,6 @@ private fun Int.hasFlags(flags: Int): Boolean = this and flags == flags
 
 internal fun Int.hasFlags(vararg flags: Int): Boolean = hasFlags(flags.sum())
 
-internal fun String.fqName() = primitiveTypes.getOrDefault(this, this.replace("/", "."))
+internal fun String.internalToFqName() = primitiveTypes.getOrDefault(this, this.replace("/", "."))
+
+internal fun String.fqNameToDescriptor() = "L${this.replace(".", "/")};"
