@@ -128,18 +128,18 @@ internal data class FunctionParameter(val name: String, val type: Type, val inde
  */
 internal enum class MethodKind {
     /**
-     * Stack -> no this
-     * Parameters -> no this
+     * Stack -> no 'this'
+     * Parameters -> no 'this'
      */
     STATIC,
     /**
-     * Stack -> this
-     * Parameters -> no this
+     * Stack -> 'this'
+     * Parameters -> no 'this'
      */
     CONSTRUCTOR,
     /**
-     * Stack -> this
-     * Parameters -> this
+     * Stack -> 'this'
+     * Parameters -> 'this'
      */
     INSTANCE;
 

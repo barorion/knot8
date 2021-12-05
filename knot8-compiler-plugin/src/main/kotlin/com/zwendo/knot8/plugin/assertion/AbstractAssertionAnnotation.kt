@@ -11,15 +11,16 @@ internal abstract class AbstractAssertionAnnotation(
     private val exceptionMessage: String,
     targets: Set<AnnotationTarget>,
 ) : AnnotationVisitor(API_VERSION) {
+    protected val paramFqName: String = "${data.knot8MethodVisitor.methodFqName}.${data.parameter.name}"
 
     init {
         if (!targets.contains(data.target)) { // asserts that target is valid
-            throw Knot8IllegalAnnotationTargetException(annotationName, data.target)
+            throw Knot8IllegalAnnotationTargetException(paramFqName, annotationName, data.target)
         }
     }
 
-    private fun throwAttributeError(invalidAttributeName: String?): Nothing {
-        throw Knot8IllegalAnnotationAttributeException(annotationName, invalidAttributeName ?: "")
+    private fun throwAttributeError(invalidAttributeName: String): Nothing {
+        throw Knot8IllegalAnnotationAttributeException(paramFqName, annotationName, invalidAttributeName)
     }
 
     /**
@@ -42,13 +43,13 @@ internal abstract class AbstractAssertionAnnotation(
 
     protected abstract fun writeAssertionTest(visitor: MethodVisitor): Label
 
-    override fun visitEnum(name: String?, descriptor: String?, value: String?): Nothing = throwAttributeError(name)
+    override fun visitEnum(name: String, descriptor: String, value: String): Nothing = throwAttributeError(name)
 
-    override fun visitAnnotation(name: String?, descriptor: String?): Nothing = throwAttributeError(name)
+    override fun visitAnnotation(name: String, descriptor: String): Nothing = throwAttributeError(name)
 
-    override fun visitArray(name: String?): Nothing = throwAttributeError(name)
+    override fun visitArray(name: String): Nothing = throwAttributeError(name)
 
-    override fun visit(name: String?, value: Any?): Nothing = throwAttributeError(name)
+    override fun visit(name: String, value: Any): Nothing = throwAttributeError(name)
 
     override fun visitEnd() {
         data.knot8MethodVisitor.onMethodEnter.add(this::writeAssertion) // registers assertion writing

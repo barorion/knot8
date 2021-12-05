@@ -10,13 +10,14 @@ import org.jetbrains.org.objectweb.asm.MethodVisitor
  * annotations.
  */
 internal class Knot8MethodVisitor(
-    private val data: Knot8MethodVisitorData,
+    val data: Knot8MethodVisitorData,
     private val parameters: List<FunctionParameter>,
 ) : MethodVisitor(API_VERSION, data.original) {
     var onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
         private set
     private var isInitialized = false
     private val methodKind: MethodKind = MethodKind.getKind(data.methodName, data.methodAccess)
+    val methodFqName: String = "${data.className.internalToFqName()}#${data.methodName}"
 
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)
@@ -74,6 +75,7 @@ internal class Knot8MethodVisitor(
         val data = Knot8AnnotationVisitorData(target, this, default, visible, parameter)
         return annotationProvider(data)
     }
+
 
     companion object {
         private val nameToAnnotationVisitor: Map<String, AnnotationVisitorFunction> = hashMapOf(

@@ -5,27 +5,31 @@ import com.zwendo.knot8.plugin.AnnotationTarget
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes
-import java.util.*
 
 internal class NotEmptyAssertion(
     data: Knot8AnnotationVisitorData
-) : AbstractAssertionAnnotation(data, NAME, "${data.parameter.name} $ERROR_MESSAGE", TARGETS) {
+) : AbstractAssertionAnnotation(
+    data,
+    NAME,
+    "${data.parameter.name} $ERROR_MESSAGE",
+    TARGETS
+) {
     private val owner: String = run {
-        val type = data.parameter.type
-        val typeFqName = type.internalName.internalToFqName()
-        if (type.internalName == STRING_INTERNAL_NAME) {
+        val typeInternalName: String = data.parameter.type.internalName
+        val typeFqName: String = data.parameter.type.internalName.internalToFqName()
+
+        if (typeInternalName == STRING_INTERNAL_NAME) { // if target is a string
             return@run STRING_INTERNAL_NAME
         } else {
-            if (data.parameter.type.isPrimitive()) {
-                throw Knot8IllegalAnnotationTargetTypeException(NAME, typeFqName)
+            if (data.parameter.type.isPrimitive()) { // check first if type is not a primitive
+                throw Knot8IllegalAnnotationTargetTypeException(paramFqName, NAME, typeFqName)
             }
-            val typeClass = Class.forName(typeFqName, false, javaClass.classLoader)
-            val matchingType = typeClass.findFirstInterface(VALID_SUPERTYPES)
+            val typeClass = Class.forName(typeFqName, false, javaClass.classLoader) // load type class
+            val matchingType = typeClass.findFirstSuperInterface(VALID_SUPERTYPES) // find first matching interface
             if (matchingType != null) {
-                //typeClass.declaredMethods.contains(Method.)
-                return@run type.internalName.fqNameToInternal()
+                return@run typeInternalName
             }
-            throw Knot8IllegalAnnotationTargetTypeException(NAME, typeFqName)
+            throw Knot8IllegalAnnotationTargetTypeException(paramFqName, NAME, typeFqName)
         }
     }
 

@@ -39,7 +39,7 @@ internal class NumberAssertion private constructor(
     init {
         val typeName = data.parameter.type.internalName
         if (!VALID_TYPES.contains(typeName)) {
-            throw Knot8IllegalAnnotationTargetTypeException(assertion.annotationName, typeName.internalToFqName())
+            throw Knot8IllegalAnnotationTargetTypeException("", assertion.annotationName, typeName.internalToFqName())
         }
     }
 

@@ -99,14 +99,14 @@ internal fun String.internalToDescriptor() = "L$this;"
 
 internal fun String.fqNameToInternal() = this.replace(".", "/")
 
-internal fun Class<out Any>.doesExtends(`class`: Class<out Any>): Boolean {
-    return (this == `class`) or (superclass?.doesExtends(`class`) ?: false)
+internal fun Class<out Any>.doesInheritsFrom(`class`: Class<out Any>): Boolean {
+    return (this == `class`) || (superclass?.doesInheritsFrom(`class`) ?: false)
 }
 
-internal fun Class<out Any>.findFirstInterface(interfaces: Collection<Class<out Any>>): Class<out Any>? {
+internal fun Class<out Any>.findFirstSuperInterface(interfaces: Collection<Class<out Any>>): Class<out Any>? {
     return if (interfaces.contains(this)) {
         this
     } else {
-        this.interfaces.find { it.findFirstInterface(interfaces) != null }
+        this.interfaces.find { it.findFirstSuperInterface(interfaces) != null }
     }
 }

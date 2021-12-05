@@ -15,13 +15,15 @@ sealed class Knot8Exception(message: String) : Exception(message)
  *
  * @constructor Creates a [Knot8IllegalAnnotationAttributeException] instance.
  *
+ * @param near the location of the trigger of the exception
  * @param annotationName the name of the annotation involved in this exception
  * @param invalidAttributeName the name of the illegal attribute involved in this exception
  */
 class Knot8IllegalAnnotationAttributeException internal constructor(
+    near: String,
     annotationName: String,
     invalidAttributeName: String
-) : Knot8Exception("$annotationName annotation has no attribute named: $invalidAttributeName")
+) : Knot8Exception("Illegal annotation attribute near $near: $annotationName annotation has no attribute named: $invalidAttributeName")
 
 /**
  * Knot8 exception thrown when an annotation is used on an illegal target. Probably due to the presence of an
@@ -29,11 +31,16 @@ class Knot8IllegalAnnotationAttributeException internal constructor(
  *
  * @constructor Creates a [Knot8IllegalAnnotationTargetException] instance.
  *
+ * @param near the location of the trigger of the exception
  * @param annotationName the name of the annotation involved in this exception
  * @param target the illegal target involved in this exception
  */
-class Knot8IllegalAnnotationTargetException internal constructor(annotationName: String, target: AnnotationTarget) :
-    Knot8Exception("Illegal annotation target, annotation $annotationName doesn't support $target.")
+class Knot8IllegalAnnotationTargetException internal constructor(
+    near: String,
+    annotationName: String,
+    target: AnnotationTarget
+) :
+    Knot8Exception("Illegal annotation target $near: annotation $annotationName doesn't support $target.")
 
 /**
  * Knot8 exception thrown when an annotation is used on a target (variable, field or parameter) which the type is incompatible
@@ -41,11 +48,15 @@ class Knot8IllegalAnnotationTargetException internal constructor(annotationName:
  *
  * @constructor Creates a [Knot8IllegalAnnotationTargetTypeException] instance.
  *
+ * @param near the location of the trigger of the exception
  * @param annotationName the name of the annotation involved in this exception
  * @param targetTypeInternalName the internal type of the annotation target
  */
-class Knot8IllegalAnnotationTargetTypeException internal constructor(annotationName: String, targetTypeInternalName: String) :
+class Knot8IllegalAnnotationTargetTypeException internal constructor(
+    near: String,
+    annotationName: String,
+    targetTypeInternalName: String
+) :
     Knot8Exception(
-        "Illegal annotation target type, annotation $annotationName doesn't support ${
-            targetTypeInternalName.internalToFqName()
-        } type.")
+        "Illegal annotation target type near $near: annotation $annotationName doesn't support $targetTypeInternalName type."
+    )
