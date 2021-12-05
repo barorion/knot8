@@ -2,12 +2,12 @@ package com.zwendo.knot8.annotation
 
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 annotation class NotZero
 
 @MustBeDocumented
 @Retention(AnnotationRetention.BINARY)
-@Target( AnnotationTarget.FUNCTION, AnnotationTarget.FIELD)
+@Target( AnnotationTarget.FUNCTION, AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 annotation class PosOrZero
 
 @MustBeDocumented
