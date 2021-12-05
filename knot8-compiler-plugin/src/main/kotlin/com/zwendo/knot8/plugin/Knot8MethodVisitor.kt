@@ -4,7 +4,6 @@ import com.zwendo.knot8.plugin.assertion.NumberAssertion
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes
-import org.jetbrains.org.objectweb.asm.Type
 
 internal class Knot8MethodVisitor(
     private val original: MethodVisitor,
@@ -15,30 +14,59 @@ internal class Knot8MethodVisitor(
     private val exceptions: Array<out String>,
     private val parameters: List<FunctionParameter>,
 ) : MethodVisitor(API_VERSION, original) {
-    val onVisitCode = mutableListOf<(MethodVisitor) -> Boolean>()
+    val onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
+    private val methodType: MethodType
+    private var isInitialized = false
+
+    // compute method type
+    init {
+        methodType = if (name == "<init>") {
+            MethodType.CONSTRUCTOR
+        } else if (access.hasFlags(Opcodes.ACC_STATIC)) {
+            MethodType.STATIC
+        } else {
+            MethodType.INSTANCE
+        }
+    }
 
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)
+        // adds 1 when the is 'this' in stack
+        val paramIndex = if (methodType == MethodType.STATIC) parameter else parameter + 1
         return visitSpecificAnnotation(
             descriptor,
             AnnotationTarget.PARAMETER,
             default,
             parameter,
             visible,
-            parameters[parameter]
+            parameters[paramIndex]
         )
     }
 
     override fun visitCode() {
-        // TODO add check for constructors
-        val iterator = onVisitCode.iterator()
-        while (iterator.hasNext()) {
-            if (iterator.next()(original)) {
-                iterator.remove()
-            }
+        // waits for super constructor call
+        if (methodType != MethodType.CONSTRUCTOR) {
+            onMethodEnter()
         }
         super.visitCode()
     }
+
+    override fun visitMethodInsn(
+        opcode: Int,
+        owner: String?,
+        name: String?,
+        descriptor: String?,
+        isInterface: Boolean
+    ) {
+        super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
+        // notify observers right after super constructor call
+        if ((methodType == MethodType.CONSTRUCTOR) and !isInitialized) {
+            onMethodEnter()
+            isInitialized = true
+        }
+    }
+
+    private fun onMethodEnter() = onMethodEnter.forEach { it(original) }
 
     private fun visitSpecificAnnotation(
         descriptor: String,
@@ -59,6 +87,12 @@ internal class Knot8MethodVisitor(
             NumberAssertion.POSITIVE_OR_ZERO_NAME to { NumberAssertion.positiveOrZero(it) },
             NumberAssertion.POSITIVE_NAME to { NumberAssertion.positive(it) },
         )
+    }
+
+    private enum class MethodType {
+        STATIC,
+        CONSTRUCTOR,
+        INSTANCE,
     }
 }
 
