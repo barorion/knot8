@@ -8,8 +8,7 @@ import java.util.Locale
 enum class AnnotationTarget {
     FIELD,
     METHOD,
-    PARAMETER,
-    CONSTRUCTOR;
+    PARAMETER;
 
     override fun toString(): String = super.toString().lowercase().replaceFirstChar {
         if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()

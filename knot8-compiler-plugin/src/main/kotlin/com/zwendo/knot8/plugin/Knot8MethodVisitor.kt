@@ -4,6 +4,10 @@ import com.zwendo.knot8.plugin.assertion.NumberAssertion
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 
+/**
+ * The Knot8 custom [MethodVisitor]. An instance will parse a method code and modify it according to the encountered
+ * annotations.
+ */
 internal class Knot8MethodVisitor(
     private val original: MethodVisitor,
     private val access: Int,
@@ -13,7 +17,8 @@ internal class Knot8MethodVisitor(
     private val exceptions: Array<out String>,
     private val parameters: List<FunctionParameter>,
 ) : MethodVisitor(API_VERSION, original) {
-    val onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
+    var onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
+        private set
     private var isInitialized = false
     private val methodKind: MethodKind = MethodKind.getKind(name, access)
 
@@ -25,7 +30,6 @@ internal class Knot8MethodVisitor(
             descriptor,
             AnnotationTarget.PARAMETER,
             default,
-            parameter,
             visible,
             parameters[paramIndex]
         )
@@ -33,10 +37,10 @@ internal class Knot8MethodVisitor(
 
     override fun visitCode() {
         // waits for super constructor call
+        super.visitCode()
         if (methodKind != MethodKind.CONSTRUCTOR) {
             onMethodEnter()
         }
-        super.visitCode()
     }
 
     override fun visitMethodInsn(
@@ -54,18 +58,24 @@ internal class Knot8MethodVisitor(
         }
     }
 
-    private fun onMethodEnter() = onMethodEnter.forEach { it(original) }
+    /**
+     * The method called just before starting writing method code. It notifies all observers registered and then
+     * unregister them.
+     */
+    private fun onMethodEnter() {
+        onMethodEnter.forEach { it(original) }
+        onMethodEnter = mutableListOf()
+    }
 
     private fun visitSpecificAnnotation(
         descriptor: String,
         target: AnnotationTarget,
         default: AnnotationVisitor,
-        paramIndex: Int,
         visible: Boolean,
         parameter: FunctionParameter,
     ): AnnotationVisitor {
         val annotationProvider = nameToAnnotationVisitor[descriptor] ?: return default
-        val data = AnnotationVisitorData(target, this, default, visible, parameter, access)
+        val data = Knot8AnnotationVisitorData(target, this, default, visible, parameter, access)
         return annotationProvider(data)
     }
 
@@ -78,13 +88,23 @@ internal class Knot8MethodVisitor(
     }
 }
 
-internal data class AnnotationVisitorData(
+/**
+ * Represents the data required to create a Knot8 annotation visitor.
+ *
+ * @constructor creates a [Knot8AnnotationVisitorData] instance.
+ * @param target the target of the annotation
+ * @param knot8MethodVisitor the [Knot8MethodVisitor] associated to the annotation
+ * @param default the default annotation visitor
+ * @param isVisibleAtRuntime true if the annotation is visible at runtime; false otherwise
+ * @param methodAccess the flags concerning the method access
+ */
+internal data class Knot8AnnotationVisitorData(
     val target: AnnotationTarget,
     val knot8MethodVisitor: Knot8MethodVisitor,
     val default: AnnotationVisitor,
-    val isMethodVisible: Boolean,
+    val isVisibleAtRuntime: Boolean,
     val parameter: FunctionParameter,
     val methodAccess: Int,
 )
 
-private typealias AnnotationVisitorFunction = (AnnotationVisitorData) -> AnnotationVisitor
+private typealias AnnotationVisitorFunction = (Knot8AnnotationVisitorData) -> AnnotationVisitor

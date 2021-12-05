@@ -6,7 +6,7 @@ import com.zwendo.knot8.plugin.AnnotationTarget
 import org.jetbrains.org.objectweb.asm.*
 
 internal abstract class AbstractAssertionAnnotation(
-    protected val data: AnnotationVisitorData,
+    protected val data: Knot8AnnotationVisitorData,
     private val annotationName: String,
     private val exceptionMessage: String,
     targets: Set<AnnotationTarget>,

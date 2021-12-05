@@ -15,8 +15,18 @@ private val primitiveTypes = hashMapOf(
     "D" to "double"
 )
 
+/**
+ * Tests if a [this] is a primitive type.
+ *
+ * @return true if [this] is a primitive type; false otherwise
+ */
 internal fun Type.isPrimitive(): Boolean = primitiveTypes.contains(internalName)
 
+/**
+ * Gets the zero corresponding to the type of [this].
+ *
+ * @return the zero corresponding to [this]
+ */
 internal fun Type.getConstZeroOpCode(): Int = when (sort) {
     Type.INT -> Opcodes.ICONST_0
     Type.FLOAT -> Opcodes.FCONST_0
@@ -25,6 +35,11 @@ internal fun Type.getConstZeroOpCode(): Int = when (sort) {
     else -> throw IllegalArgumentException("Unsupported type: $internalName")
 }
 
+/**
+ * Gets the comparison [Opcodes] for non int primitives.
+ *
+ * @return the comparison [Opcodes] corresponding to [this]
+ */
 internal fun Type.getCmpOpCode(): Int = when (sort) {
     Type.FLOAT -> Opcodes.FCMPL
     Type.DOUBLE -> Opcodes.DCMPL
@@ -32,7 +47,12 @@ internal fun Type.getCmpOpCode(): Int = when (sort) {
     else -> throw IllegalArgumentException("Unsupported type: $internalName")
 }
 
-internal fun Type.isIntOrEquivalent(): Boolean = when (sort) {
+/**
+ * Tests if [this] type can use int zero const for its operations.
+ *
+ * @return true if [this] type can use int zero; false otherwise
+ */
+internal fun Type.canUseIntZero(): Boolean = when (sort) {
     Type.INT,
     Type.BYTE,
     Type.SHORT,
@@ -40,10 +60,32 @@ internal fun Type.isIntOrEquivalent(): Boolean = when (sort) {
     else -> false
 }
 
+/**
+ * Tests if an [this] which is representing binary flags has particular flags
+ *
+ * @param flags the different flags, separated by a [or] or a [plus]
+ * @return true if [this] has all the flags; else otherwise
+ */
 private fun Int.hasFlags(flags: Int): Boolean = this and flags == flags
 
+/**
+ * Tests if an [this] which is representing binary flags has particular flags
+ *
+ * @param flags the different flags, separated by a comma
+ * @return true if [this] has all the flags; else otherwise
+ */
 internal fun Int.hasFlags(vararg flags: Int): Boolean = hasFlags(flags.sum())
 
+/**
+ * Converts [this] (a class internal name) to a fq name.
+ *
+ * @return the fq name corresponding to [this]
+ */
 internal fun String.internalToFqName() = primitiveTypes.getOrDefault(this, this.replace("/", "."))
 
+/**
+ * Converts [this] (a class fq name) to a descriptor.
+ *
+ * @return the descriptor corresponding to [this]
+ */
 internal fun String.fqNameToDescriptor() = "L${this.replace(".", "/")};"

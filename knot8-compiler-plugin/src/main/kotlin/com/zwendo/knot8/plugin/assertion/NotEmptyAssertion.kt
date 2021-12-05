@@ -1,12 +1,12 @@
 package com.zwendo.knot8.plugin.assertion
 
 import com.zwendo.knot8.plugin.AnnotationTarget
-import com.zwendo.knot8.plugin.AnnotationVisitorData
+import com.zwendo.knot8.plugin.Knot8AnnotationVisitorData
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 
 internal class NotEmptyAssertion(
-    data: AnnotationVisitorData
+    data: Knot8AnnotationVisitorData
 ) : AbstractAssertionAnnotation(data, NOT_EMPTY_NAME, "", TARGETS) {
 
     private companion object {

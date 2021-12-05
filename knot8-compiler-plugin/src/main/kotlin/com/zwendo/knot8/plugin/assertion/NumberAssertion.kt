@@ -5,7 +5,7 @@ import com.zwendo.knot8.plugin.AnnotationTarget
 import org.jetbrains.org.objectweb.asm.*
 
 internal class NumberAssertion private constructor(
-    data: AnnotationVisitorData,
+    data: Knot8AnnotationVisitorData,
     private val assertion: Type
 ) : AbstractAssertionAnnotation(
     data,
@@ -51,20 +51,17 @@ internal class NumberAssertion private constructor(
         val POSITIVE_OR_ZERO_NAME = Type.POSITIVE_OR_ZERO.descriptor
         val POSITIVE_NAME = Type.POSITIVE.descriptor
 
-        fun notZero(data: AnnotationVisitorData) = NumberAssertion(data, Type.NOT_ZERO)
+        fun notZero(data: Knot8AnnotationVisitorData) = NumberAssertion(data, Type.NOT_ZERO)
 
-        fun positiveOrZero(data: AnnotationVisitorData) = NumberAssertion(data, Type.POSITIVE_OR_ZERO)
+        fun positiveOrZero(data: Knot8AnnotationVisitorData) = NumberAssertion(data, Type.POSITIVE_OR_ZERO)
 
-        fun positive(data: AnnotationVisitorData) = NumberAssertion(data, Type.POSITIVE)
+        fun positive(data: Knot8AnnotationVisitorData) = NumberAssertion(data, Type.POSITIVE)
     }
 
     override fun writeAssertionTest(visitor: MethodVisitor): Label = with(visitor) {
         val type = data.parameter.type
-        if (!type.isPrimitive()) { // asserts that type is primitive
-            throw Knot8IllegalAnnotationTargetTypeException(assertion.annotationName, type.internalName)
-        }
         visitVarInsn(type.getOpcode(Opcodes.ILOAD), data.parameter.index) // load parameter
-        if (!type.isIntOrEquivalent()) { // if necessary compare to type corresponding 0
+        if (!type.canUseIntZero()) { // if necessary compare to type corresponding 0
             visitInsn(type.getConstZeroOpCode())
             visitInsn(type.getCmpOpCode())
         }
