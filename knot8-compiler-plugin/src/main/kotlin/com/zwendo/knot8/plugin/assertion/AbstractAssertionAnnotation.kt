@@ -1,8 +1,10 @@
 package com.zwendo.knot8.plugin.assertion
 
-import com.zwendo.knot8.plugin.*
-import com.zwendo.knot8.plugin.util.API_VERSION
 import com.zwendo.knot8.plugin.AnnotationTarget
+import com.zwendo.knot8.plugin.knot8visitor.Knot8AnnotationVisitorData
+import com.zwendo.knot8.plugin.Knot8IllegalAnnotationAttributeException
+import com.zwendo.knot8.plugin.Knot8IllegalAnnotationTargetException
+import com.zwendo.knot8.plugin.util.ProjectConstants
 import org.jetbrains.org.objectweb.asm.*
 
 internal abstract class AbstractAssertionAnnotation(
@@ -10,8 +12,8 @@ internal abstract class AbstractAssertionAnnotation(
     private val annotationName: String,
     private val exceptionMessage: String,
     targets: Set<AnnotationTarget>,
-) : AnnotationVisitor(API_VERSION) {
-    protected val paramFqName: String = "${data.knot8MethodVisitor.methodFqName}.${data.parameter.name}"
+) : AnnotationVisitor(ProjectConstants.API_VERSION) {
+    protected val paramFqName: String = "${data.knot8MethodVisitor.methodCanonicalName}.${data.parameter.name}"
 
     init {
         if (!targets.contains(data.target)) { // asserts that target is valid
@@ -19,6 +21,7 @@ internal abstract class AbstractAssertionAnnotation(
         }
     }
 
+    //region private methods
     private fun throwAttributeError(invalidAttributeName: String): Nothing {
         throw Knot8IllegalAnnotationAttributeException(paramFqName, annotationName, invalidAttributeName)
     }
@@ -40,9 +43,11 @@ internal abstract class AbstractAssertionAnnotation(
         visitInsn(Opcodes.ATHROW)
         visitLabel(valueIsOk)
     }
+    //endregion
 
     protected abstract fun writeAssertionTest(visitor: MethodVisitor): Label
 
+    //region annotation visitor default overrides
     override fun visitEnum(name: String, descriptor: String, value: String): Nothing = throwAttributeError(name)
 
     override fun visitAnnotation(name: String, descriptor: String): Nothing = throwAttributeError(name)
@@ -50,6 +55,7 @@ internal abstract class AbstractAssertionAnnotation(
     override fun visitArray(name: String): Nothing = throwAttributeError(name)
 
     override fun visit(name: String, value: Any): Nothing = throwAttributeError(name)
+    //endregion
 
     override fun visitEnd() {
         data.knot8MethodVisitor.onMethodEnter.add(this::writeAssertion) // registers assertion writing

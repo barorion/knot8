@@ -1,21 +1,23 @@
 package com.zwendo.knot8.plugin
 
+import com.zwendo.knot8.plugin.knot8visitor.Knot8MethodVisitor
+import com.zwendo.knot8.plugin.knot8visitor.Knot8MethodVisitorData
+import com.zwendo.knot8.plugin.util.FunctionParameter
 import com.zwendo.knot8.plugin.util.TypeAdapter
-import com.zwendo.knot8.plugin.util.hasFlags
 import org.jetbrains.kotlin.codegen.ClassBuilder
 import org.jetbrains.kotlin.codegen.DelegatingClassBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.org.objectweb.asm.MethodVisitor
-import org.jetbrains.org.objectweb.asm.Opcodes
 
 internal class Knot8ClassBuilder(
     private val delegateBuilder: ClassBuilder,
     val configuration: CompilerConfiguration
 ) : DelegatingClassBuilder() {
-    private lateinit var currentClassName: String
+    private lateinit var currentClass: TypeAdapter
 
+    //region class builder overrides
     override fun getDelegate(): ClassBuilder = delegateBuilder
 
     override fun newMethod(
@@ -27,8 +29,9 @@ internal class Knot8ClassBuilder(
         exceptions: Array<out String>?
     ): MethodVisitor {
         val original = super.newMethod(origin, access, name, desc, signature, exceptions)
-        val parameters = parameters(origin.descriptor.toString(), desc, MethodKind.getKind(name, access))
-        val data = Knot8MethodVisitorData(currentClassName, original, access, name, desc, signature, exceptions)
+        val methodKind = MethodKind.getKind(name, access)
+        val parameters = parameters(origin.descriptor.toString(), desc, methodKind)
+        val data = Knot8MethodVisitorData(currentClass, original, access, name, desc, signature, exceptions, methodKind)
         return Knot8MethodVisitor(data, parameters)
     }
 
@@ -41,10 +44,12 @@ internal class Knot8ClassBuilder(
         superName: String,
         interfaces: Array<out String>
     ) {
-        currentClassName = name
+        currentClass = TypeAdapter.fromString(name)
         super.defineClass(origin, version, access, name, signature, superName, interfaces)
     }
+    //endregion
 
+    //region private methods
     /**
      * Creates the list of [FunctionParameter] for the current method.
      *
@@ -112,52 +117,7 @@ internal class Knot8ClassBuilder(
         MethodKind.INSTANCE,
         MethodKind.STATIC -> mutableListOf()
     }
+    //endregion
 }
 
-/**
- * Represents a function parameter, an instance of this class contains all information about a parameter in a function.
- *
- * @constructor creates a [FunctionParameter] instance
- * @param name the name of the parameter
- * @param type the type of the parameter
- * @param index the index of the parameter in the local variables stack
- */
-internal data class FunctionParameter(val name: String, val type: TypeAdapter, val index: Int)
 
-/**
- * Represents the 3 method kinds with different variable stacks and parameter related to 'this'.
- */
-internal enum class MethodKind {
-    /**
-     * Stack -> no 'this'
-     * Parameters -> no 'this'
-     */
-    STATIC,
-    /**
-     * Stack -> 'this'
-     * Parameters -> no 'this'
-     */
-    CONSTRUCTOR,
-    /**
-     * Stack -> 'this'
-     * Parameters -> 'this'
-     */
-    INSTANCE;
-
-    companion object {
-        /**
-         * Compute the corresponding kind for a given function.
-         *
-         * @param name the name of the method
-         * @param access the access flags of the method
-         * @return the method kind of the method
-         */
-        fun getKind(name: String, access: Int) = if (name == "<init>") {
-            CONSTRUCTOR
-        } else if (access.hasFlags(Opcodes.ACC_STATIC)) {
-            STATIC
-        } else {
-            INSTANCE
-        }
-    }
-}

@@ -9,6 +9,7 @@ internal class TypeAdapter private constructor(
     val typeClass: Class<out Any>,
     val internalName: String,
 ) {
+    //region properties
     // different typeClass names
     val fqName: String = typeClass.canonicalName
     val descriptor: String = if (typeClass.isPrimitive || typeClass.isArray) internalName else "L$internalName;"
@@ -37,9 +38,11 @@ internal class TypeAdapter private constructor(
         Long::class.java -> Opcodes.LLOAD
         else -> Opcodes.ALOAD
     }
+    //endregion
 
     private constructor(clazz: Class<out Any>) : this(clazz, clazz.name.replace(".", "/"))
 
+    //region static methods
     companion object {
         private val BOOLEAN = TypeAdapter(Boolean::class.java, "Z")
         private val CHAR = TypeAdapter(Char::class.java, "C")
@@ -136,7 +139,9 @@ internal class TypeAdapter private constructor(
         }
 
     }
+    //endregion
 
+    //region instance methods
     fun cmpOpCode(): Int = when (typeClass) {
         Float::class.java -> Opcodes.FCMPL
         Double::class.java -> Opcodes.DCMPL
@@ -179,4 +184,5 @@ internal class TypeAdapter private constructor(
     override fun toString(): String {
         return "TypeAdapter(${typeClass.canonicalName})"
     }
+    //endregion
 }

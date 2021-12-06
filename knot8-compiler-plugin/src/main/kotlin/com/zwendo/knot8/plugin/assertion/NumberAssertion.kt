@@ -1,8 +1,9 @@
 package com.zwendo.knot8.plugin.assertion
 
-import com.zwendo.knot8.plugin.*
 import com.zwendo.knot8.plugin.AnnotationTarget
-import com.zwendo.knot8.plugin.util.ANNOTATIONS_INTERNAL_NAME
+import com.zwendo.knot8.plugin.knot8visitor.Knot8AnnotationVisitorData
+import com.zwendo.knot8.plugin.Knot8IllegalAnnotationTargetTypeException
+import com.zwendo.knot8.plugin.util.ProjectConstants
 import com.zwendo.knot8.plugin.util.TypeAdapters
 import org.jetbrains.org.objectweb.asm.*
 
@@ -35,7 +36,7 @@ internal class NumberAssertion private constructor(
         POSITIVE(Opcodes.IFGT, "Positive", "positive", "negative or zero");
 
         val errorMessage = "is marked as $rule but is $illegalStateName."
-        val descriptor = "L$ANNOTATIONS_INTERNAL_NAME$annotationName;"
+        val descriptor = "L${ProjectConstants.ANNOTATIONS_INTERNAL_NAME}$annotationName;"
     }
 
     init {

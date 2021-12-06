@@ -1,8 +1,11 @@
-package com.zwendo.knot8.plugin
+package com.zwendo.knot8.plugin.knot8visitor
 
+import com.zwendo.knot8.plugin.AnnotationTarget
+import com.zwendo.knot8.plugin.MethodKind
 import com.zwendo.knot8.plugin.assertion.NotEmptyAssertion
 import com.zwendo.knot8.plugin.assertion.NumberAssertion
-import com.zwendo.knot8.plugin.util.API_VERSION
+import com.zwendo.knot8.plugin.util.FunctionParameter
+import com.zwendo.knot8.plugin.util.ProjectConstants
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 
@@ -13,17 +16,17 @@ import org.jetbrains.org.objectweb.asm.MethodVisitor
 internal class Knot8MethodVisitor(
     private val data: Knot8MethodVisitorData,
     private val parameters: List<FunctionParameter>,
-) : MethodVisitor(API_VERSION, data.original) {
+) : MethodVisitor(ProjectConstants.API_VERSION, data.original) {
     var onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
         private set
     private var isInitialized = false
-    private val methodKind: MethodKind = MethodKind.getKind(data.methodName, data.methodAccess)
-    val methodFqName: String = "${data.className.replace("/", ".")}#${data.methodName}"
+    val methodCanonicalName: String = "${data.classType.canonicalName}#${data.methodName}"
 
+    //region method visitor overrides
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)
         // adds 1 when the is 'this' in stack
-        val paramIndex = if (methodKind == MethodKind.STATIC) parameter else parameter + 1
+        val paramIndex = if (data.kind == MethodKind.STATIC) parameter else parameter + 1
         return visitSpecificAnnotation(
             descriptor,
             AnnotationTarget.PARAMETER,
@@ -36,7 +39,7 @@ internal class Knot8MethodVisitor(
     override fun visitCode() {
         // waits for super constructor call
         super.visitCode()
-        if (methodKind != MethodKind.CONSTRUCTOR) {
+        if (data.kind != MethodKind.CONSTRUCTOR) {
             onMethodEnter()
         }
     }
@@ -50,12 +53,14 @@ internal class Knot8MethodVisitor(
     ) {
         super.visitMethodInsn(opcode, owner, name, descriptor, isInterface)
         // notify observers right after super constructor call
-        if ((methodKind == MethodKind.CONSTRUCTOR) and !isInitialized) {
+        if ((data.kind == MethodKind.CONSTRUCTOR) and !isInitialized) {
             onMethodEnter()
             isInitialized = true
         }
     }
+    //endregion
 
+    //region private methods
     /**
      * The method called just before starting writing method code. It notifies all observers registered and then
      * unregister them.
@@ -76,10 +81,10 @@ internal class Knot8MethodVisitor(
         val data = Knot8AnnotationVisitorData(target, this, default, visible, parameter)
         return annotationProvider(data)
     }
-
+    //endregion
 
     companion object {
-        private val nameToAnnotationVisitor: Map<String, AnnotationVisitorFunction> = hashMapOf(
+        private val nameToAnnotationVisitor: Map<String, (Knot8AnnotationVisitorData) -> AnnotationVisitor> = hashMapOf(
             NumberAssertion.NOT_ZERO_DESCRIPTOR to { NumberAssertion.notZero(it) },
             NumberAssertion.POSITIVE_OR_ZERO_DESCRIPTOR to { NumberAssertion.positiveOrZero(it) },
             NumberAssertion.POSITIVE_DESCRIPTOR to { NumberAssertion.positive(it) },
@@ -87,32 +92,3 @@ internal class Knot8MethodVisitor(
         )
     }
 }
-
-/**
- * Represents the data required to create a Knot8 annotation visitor.
- *
- * @constructor creates a [Knot8AnnotationVisitorData] instance.
- * @param target the target of the annotation
- * @param knot8MethodVisitor the [Knot8MethodVisitor] associated to the annotation
- * @param default the default annotation visitor
- * @param isVisibleAtRuntime true if the annotation is visible at runtime; false otherwise
- */
-internal data class Knot8AnnotationVisitorData(
-    val target: AnnotationTarget,
-    val knot8MethodVisitor: Knot8MethodVisitor,
-    val default: AnnotationVisitor,
-    val isVisibleAtRuntime: Boolean,
-    val parameter: FunctionParameter,
-)
-
-internal data class Knot8MethodVisitorData(
-    val className: String,
-    val original: MethodVisitor,
-    val methodAccess: Int,
-    val methodName: String,
-    val methodDesc: String,
-    val methodSignature: String?,
-    val methodExceptions: Array<out String>?,
-)
-
-private typealias AnnotationVisitorFunction = (Knot8AnnotationVisitorData) -> AnnotationVisitor

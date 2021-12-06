@@ -1,8 +1,9 @@
 package com.zwendo.knot8.plugin.assertion
 
-import com.zwendo.knot8.plugin.*
 import com.zwendo.knot8.plugin.AnnotationTarget
-import com.zwendo.knot8.plugin.util.ANNOTATIONS_INTERNAL_NAME
+import com.zwendo.knot8.plugin.knot8visitor.Knot8AnnotationVisitorData
+import com.zwendo.knot8.plugin.Knot8IllegalAnnotationTargetTypeException
+import com.zwendo.knot8.plugin.util.ProjectConstants
 import com.zwendo.knot8.plugin.util.TypeAdapters
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
@@ -28,7 +29,7 @@ internal class NotEmptyAssertion(
 
     companion object {
         private const val NAME = "NotEmpty"
-        const val DESCRIPTOR = "L$ANNOTATIONS_INTERNAL_NAME$NAME;"
+        const val DESCRIPTOR = "L${ProjectConstants.ANNOTATIONS_INTERNAL_NAME}$NAME;"
         private val VALID_SUPERTYPES = setOf(
             Collection::class.java,
             Map::class.java,
