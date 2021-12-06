@@ -52,6 +52,7 @@ internal class TypeAdapter private constructor(
                 it.typeClass to it
             )
         }.toMap<Any, TypeAdapter>()
+        private val TYPE_PREFIXES = setOf("Z", "C", "B", "S", "I", "F", "J", "D", "V", "L")
 
         fun fromClass(clazz: Class<out Any>): TypeAdapter = ANY_TO_PRIM[clazz] ?: TypeAdapter(clazz)
 
@@ -68,6 +69,36 @@ internal class TypeAdapter private constructor(
             }
         }
 
+        fun fromMethodDescriptor(descriptor: String): List<TypeAdapter> {
+            if (!(descriptor.startsWith('(') && descriptor.contains(')'))) {
+                throw IllegalArgumentException("Invalid method descriptor: $descriptor")
+            }
+            val list = mutableListOf<TypeAdapter>()
+            var dimensions = 0
+            var i = 1
+            while (i < descriptor.length) {
+                val ch = descriptor[i]
+                when {
+                    ch == ')' -> break // end of args
+                    ch == '[' -> dimensions++ // array encountered
+                    ch != 'V' && TYPE_PREFIXES.contains(ch.toString()) -> { // valid type prefix
+                        val typeName = "[".repeat(dimensions) + if (descriptor[i] == 'L') {
+                            descriptor.substring(i, descriptor.indexOf(';', i) + 1) // if object type
+                        } else { // if primitive
+                            descriptor[i].toString()
+                        }
+                        list += fromString(typeName)
+                        i += typeName.length - dimensions // shift index
+                        dimensions = 0 // reset dimension
+                        continue
+                    }
+                    else -> throw IllegalArgumentException("Invalid method descriptor: $descriptor")
+                }
+                i++
+            }
+            return list
+        }
+
         private fun String.anyToFqName(): String {
             val desc = if (startsWith("L") && endsWith(";")) {
                 substring(1, length - 1)
@@ -76,7 +107,7 @@ internal class TypeAdapter private constructor(
             }
             return desc.replace("/", ".")
         }
-    }
+     }
 
     fun doesInheritsFrom(clazz: Class<out Any>): Boolean = typeClass.doesInheritsFrom(clazz)
 
