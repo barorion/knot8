@@ -3,6 +3,7 @@ package com.zwendo.knot8.plugin.assertion
 import com.zwendo.knot8.plugin.*
 import com.zwendo.knot8.plugin.AnnotationTarget
 import com.zwendo.knot8.plugin.util.ANNOTATIONS_INTERNAL_NAME
+import com.zwendo.knot8.plugin.util.TypeAdapters
 import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes
