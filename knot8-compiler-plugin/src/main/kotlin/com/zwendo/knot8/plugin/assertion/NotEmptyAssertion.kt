@@ -21,7 +21,7 @@ internal class NotEmptyAssertion(
         val type = data.parameter.type
         // asserts that target has a method named isEmpty (string, map or colleciton)
         if (type != TypeAdapters.STRING && type.findFirstSuperInterface(VALID_SUPERTYPES) == null) {
-                throw Knot8IllegalAnnotationTargetTypeException(paramFqName, NAME, type.canonicalName)
+                throw Knot8IllegalAnnotationTargetTypeException(paramFqName, NAME, type)
 
         }
     }

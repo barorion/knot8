@@ -1,5 +1,7 @@
 package com.zwendo.knot8.plugin
 
+import com.zwendo.knot8.plugin.util.TypeAdapter
+
 /**
  * Represents the Knot8 plugin base exception.
  *
@@ -44,19 +46,19 @@ class Knot8IllegalAnnotationTargetException internal constructor(
 
 /**
  * Knot8 exception thrown when an annotation is used on a target (variable, field or parameter) which the type is incompatible
- * with the annotation used on this target
+ * with the annotation used on this target.
  *
  * @constructor Creates a [Knot8IllegalAnnotationTargetTypeException] instance.
  *
  * @param near the location of the trigger of the exception
  * @param annotationName the name of the annotation involved in this exception
- * @param targetTypeInternalName the internal type of the annotation target
+ * @param type the type of the annotation target
  */
 class Knot8IllegalAnnotationTargetTypeException internal constructor(
     near: String,
     annotationName: String,
-    targetTypeInternalName: String
+    type: TypeAdapter
 ) :
     Knot8Exception(
-        "Illegal annotation target type near $near: annotation $annotationName doesn't support $targetTypeInternalName type."
+        "Illegal annotation target type near $near: annotation $annotationName doesn't support ${type.canonicalName} type."
     )
