@@ -10,7 +10,7 @@ import org.jetbrains.org.objectweb.asm.MethodVisitor
  * annotations.
  */
 internal class Knot8MethodVisitor(
-    val data: Knot8MethodVisitorData,
+    private val data: Knot8MethodVisitorData,
     private val parameters: List<FunctionParameter>,
 ) : MethodVisitor(API_VERSION, data.original) {
     var onMethodEnter = mutableListOf<(MethodVisitor) -> Unit>()
