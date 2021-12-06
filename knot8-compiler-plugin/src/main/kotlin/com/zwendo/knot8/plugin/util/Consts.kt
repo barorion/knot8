@@ -1,4 +1,4 @@
-package com.zwendo.knot8.plugin
+package com.zwendo.knot8.plugin.util
 
 import org.jetbrains.org.objectweb.asm.Opcodes
 

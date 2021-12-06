@@ -1,13 +1,24 @@
-package com.zwendo.knot8.plugin
+package com.zwendo.knot8.plugin.util
 
 import org.jetbrains.org.objectweb.asm.Opcodes
 
+/**
+ * Represents a JVM type in all its forms (Class, full qualified name, internal name and descriptor).
+ */
 internal class TypeAdapter private constructor(
     val typeClass: Class<out Any>,
     val internalName: String,
 ) {
+    // different typeClass names
     val fqName: String = typeClass.canonicalName
     val descriptor: String = if (typeClass.isPrimitive || typeClass.isArray) internalName else "L$internalName;"
+
+    // typeClass delegation
+    val isPrimitive: Boolean = typeClass.isPrimitive
+    val isArray: Boolean = typeClass.isArray
+    val canonicalName: String = typeClass.canonicalName
+
+    // typeClass specs
     val isIntEquivalent: Boolean = when (typeClass) {
         Int::class.java,
         Byte::class.java,
@@ -15,21 +26,15 @@ internal class TypeAdapter private constructor(
         Char::class.java -> true
         else -> false
     }
-    val zeroConstOpCode: Int? = when (typeClass) {
+    val loadOpCode: Int = when (typeClass) {
         Int::class.java,
         Byte::class.java,
         Short::class.java,
-        Char::class.java -> Opcodes.ICONST_0
-        Float::class.java -> Opcodes.FCONST_0
-        Double::class.java -> Opcodes.DCONST_0
-        Long::class.java -> Opcodes.LCONST_0
-        else -> null
-    }
-    val cmpOpCode: Int? = when (typeClass) {
-        Float::class.java -> Opcodes.FCMPL
-        Double::class.java -> Opcodes.DCMPL
-        Long::class.java -> Opcodes.LCMP
-        else -> null
+        Char::class.java -> Opcodes.ILOAD
+        Float::class.java -> Opcodes.FLOAD
+        Double::class.java -> Opcodes.DLOAD
+        Long::class.java -> Opcodes.LLOAD
+        else -> Opcodes.ALOAD
     }
 
     private constructor(clazz: Class<out Any>) : this(clazz, clazz.name.replace(".", "/"))
@@ -54,21 +59,42 @@ internal class TypeAdapter private constructor(
         }.toMap<Any, TypeAdapter>()
         private val TYPE_PREFIXES = setOf("Z", "C", "B", "S", "I", "F", "J", "D", "V", "L")
 
+        /**
+         * Creates a [TypeAdapter] from a java [Class].
+         *
+         * @param clazz the class to create the adapter
+         * @return the created [TypeAdapter]
+         */
         fun fromClass(clazz: Class<out Any>): TypeAdapter = ANY_TO_PRIM[clazz] ?: TypeAdapter(clazz)
 
-        fun fromString(type: String): TypeAdapter {
-            val typeAdapter = ANY_TO_PRIM[type]
+        /**
+         * Creates a [TypeAdapter] from a [String] in the form of a full qualified name,
+         * a type descriptor or an internal name.
+         *
+         * @param string the string to create the adapter
+         * @return the created [TypeAdapter]
+         * @throws IllegalArgumentException if the given string does not represent a type.
+         */
+        fun fromString(string: String): TypeAdapter {
+            val typeAdapter = ANY_TO_PRIM[string]
             if (typeAdapter != null) {
                 return typeAdapter
             }
             try {
-                val clazz = Class.forName(type.anyToFqName(), false, TypeAdapter::class.java.classLoader)
+                val clazz = Class.forName(string.anyToFqName(), false, TypeAdapter::class.java.classLoader)
                 return TypeAdapter(clazz)
             } catch (_: ClassNotFoundException) {
-                throw IllegalArgumentException("Invalid type provided, no class found for $type.")
+                throw IllegalArgumentException("Invalid type provided, no class found for $string.")
             }
         }
 
+        /**
+         * Creates the list of [TypeAdapter] of parameters from a method descriptor.
+         *
+         * @param descriptor the descriptor of the method to create the adapter
+         * @return the created [TypeAdapter]
+         * @throws IllegalArgumentException if the given string does not represent a method descriptor
+         */
         fun fromMethodDescriptor(descriptor: String): List<TypeAdapter> {
             if (!(descriptor.startsWith('(') && descriptor.contains(')'))) {
                 throw IllegalArgumentException("Invalid method descriptor: $descriptor")
@@ -107,7 +133,26 @@ internal class TypeAdapter private constructor(
             }
             return desc.replace("/", ".")
         }
-     }
+
+    }
+
+    fun cmpOpCode(): Int = when (typeClass) {
+        Float::class.java -> Opcodes.FCMPL
+        Double::class.java -> Opcodes.DCMPL
+        Long::class.java -> Opcodes.LCMP
+        else -> throw UnsupportedOperationException("Unsupported method for type: $canonicalName")
+    }
+
+    fun zeroConstOpCode(): Int = when (typeClass) {
+        Int::class.java,
+        Byte::class.java,
+        Short::class.java,
+        Char::class.java -> Opcodes.ICONST_0
+        Float::class.java -> Opcodes.FCONST_0
+        Double::class.java -> Opcodes.DCONST_0
+        Long::class.java -> Opcodes.LCONST_0
+        else -> throw UnsupportedOperationException("Unsupported method for type: $canonicalName")
+    }
 
     fun doesInheritsFrom(clazz: Class<out Any>): Boolean = typeClass.doesInheritsFrom(clazz)
 
@@ -133,21 +178,4 @@ internal class TypeAdapter private constructor(
     override fun toString(): String {
         return "TypeAdapter(${typeClass.canonicalName})"
     }
-}
-
-internal object TypeAdapters {
-    val BOOLEAN = TypeAdapter.fromClass(Boolean::class.java)
-    val CHAR = TypeAdapter.fromClass(Char::class.java)
-    val BYTE = TypeAdapter.fromClass(Byte::class.java)
-    val SHORT = TypeAdapter.fromClass(Short::class.java)
-    val INT = TypeAdapter.fromClass(Int::class.java)
-    val FLOAT = TypeAdapter.fromClass(Float::class.java)
-    val LONG = TypeAdapter.fromClass(Long::class.java)
-    val DOUBLE = TypeAdapter.fromClass(Double::class.java)
-    val VOID = TypeAdapter.fromClass(Void.TYPE)
-
-    val UNIT = TypeAdapter.fromClass(Unit::class.java)
-    val COLLECTION = TypeAdapter.fromClass(Collection::class.java)
-    val MAP = TypeAdapter.fromClass(Map::class.java)
-    val STRING = TypeAdapter.fromClass(String::class.java)
 }

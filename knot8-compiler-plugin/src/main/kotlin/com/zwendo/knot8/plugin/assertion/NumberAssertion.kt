@@ -2,6 +2,7 @@ package com.zwendo.knot8.plugin.assertion
 
 import com.zwendo.knot8.plugin.*
 import com.zwendo.knot8.plugin.AnnotationTarget
+import com.zwendo.knot8.plugin.util.ANNOTATIONS_INTERNAL_NAME
 import org.jetbrains.org.objectweb.asm.*
 
 internal class NumberAssertion private constructor(
@@ -33,19 +34,26 @@ internal class NumberAssertion private constructor(
         POSITIVE(Opcodes.IFGT, "Positive", "positive", "negative or zero");
 
         val errorMessage = "is marked as $rule but is $illegalStateName."
-        val descriptor = "${ANNOTATIONS_INTERNAL_NAME}$annotationName".internalToDescriptor()
+        val descriptor = "L$ANNOTATIONS_INTERNAL_NAME$annotationName;"
     }
 
     init {
-        val typeName = data.parameter.type.internalName
-        if (!VALID_TYPES.contains(typeName)) {
-            throw Knot8IllegalAnnotationTargetTypeException("", assertion.annotationName, typeName.internalToFqName())
+        val type = data.parameter.type
+        if (!VALID_TYPES.contains(type)) {
+            throw Knot8IllegalAnnotationTargetTypeException("", assertion.annotationName, type.canonicalName)
         }
     }
 
     companion object {
         private val TARGETS = setOf(AnnotationTarget.PARAMETER)
-        private val VALID_TYPES = setOf("B", "S", "I", "F", "J", "D")
+        private val VALID_TYPES = setOf(
+            TypeAdapters.BYTE,
+            TypeAdapters.SHORT,
+            TypeAdapters.INT,
+            TypeAdapters.FLOAT,
+            TypeAdapters.LONG,
+            TypeAdapters.DOUBLE
+        )
 
         val NOT_ZERO_DESCRIPTOR = Type.NOT_ZERO.descriptor
         val POSITIVE_OR_ZERO_DESCRIPTOR = Type.POSITIVE_OR_ZERO.descriptor
@@ -60,10 +68,10 @@ internal class NumberAssertion private constructor(
 
     override fun writeAssertionTest(visitor: MethodVisitor): Label = with(visitor) {
         val type = data.parameter.type
-        visitVarInsn(type.getOpcode(Opcodes.ILOAD), data.parameter.index) // load parameter
-        if (!type.canUseIntZero()) { // if necessary compare to type corresponding 0
-            visitInsn(type.getConstZeroOpCode())
-            visitInsn(type.getCmpOpCode())
+        visitVarInsn(type.loadOpCode, data.parameter.index) // load parameter
+        if (!type.isIntEquivalent) { // if necessary compare to type corresponding 0
+            visitInsn(type.zeroConstOpCode())
+            visitInsn(type.cmpOpCode())
         }
         val label = Label()
         visitJumpInsn(assertion.opcode, label)

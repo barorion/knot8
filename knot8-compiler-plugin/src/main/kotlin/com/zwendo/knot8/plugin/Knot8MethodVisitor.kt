@@ -2,6 +2,7 @@ package com.zwendo.knot8.plugin
 
 import com.zwendo.knot8.plugin.assertion.NotEmptyAssertion
 import com.zwendo.knot8.plugin.assertion.NumberAssertion
+import com.zwendo.knot8.plugin.util.API_VERSION
 import org.jetbrains.org.objectweb.asm.AnnotationVisitor
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 
@@ -17,7 +18,7 @@ internal class Knot8MethodVisitor(
         private set
     private var isInitialized = false
     private val methodKind: MethodKind = MethodKind.getKind(data.methodName, data.methodAccess)
-    val methodFqName: String = "${data.className.internalToFqName()}#${data.methodName}"
+    val methodFqName: String = "${data.className.replace("/", ".")}#${data.methodName}"
 
     override fun visitParameterAnnotation(parameter: Int, descriptor: String, visible: Boolean): AnnotationVisitor {
         val default: AnnotationVisitor = super.visitParameterAnnotation(parameter, descriptor, visible)

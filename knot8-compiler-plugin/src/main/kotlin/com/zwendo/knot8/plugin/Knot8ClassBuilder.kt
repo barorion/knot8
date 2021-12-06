@@ -1,5 +1,7 @@
 package com.zwendo.knot8.plugin
 
+import com.zwendo.knot8.plugin.util.TypeAdapter
+import com.zwendo.knot8.plugin.util.hasFlags
 import org.jetbrains.kotlin.codegen.ClassBuilder
 import org.jetbrains.kotlin.codegen.DelegatingClassBuilder
 import org.jetbrains.kotlin.com.intellij.psi.PsiElement
@@ -7,7 +9,6 @@ import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.Opcodes
-import org.jetbrains.org.objectweb.asm.Type
 
 internal class Knot8ClassBuilder(
     private val delegateBuilder: ClassBuilder,
@@ -61,7 +62,7 @@ internal class Knot8ClassBuilder(
         val names = namesList(methodKind)
 
         // add all types and names to lists
-        types += Type.getArgumentTypes(bytecodeDesc).toMutableList()
+        types += TypeAdapter.fromMethodDescriptor(bytecodeDesc)
         names += detailedDesc.slice(IntRange(detailedDesc.indexOf('(') + 1, detailedDesc.lastIndexOf(')')))
             .split(", ")
             .map { it.replaceAfter(':', "").dropLast(1) }
@@ -83,17 +84,17 @@ internal class Knot8ClassBuilder(
      * @param methodKind the current method kind
      * @return the list of the parameters types (empty or containing this)
      */
-    private fun typesList(desc: String, methodKind: MethodKind): MutableList<Type> = when (methodKind) {
+    private fun typesList(desc: String, methodKind: MethodKind): MutableList<TypeAdapter> = when (methodKind) {
         MethodKind.STATIC -> mutableListOf()
         MethodKind.CONSTRUCTOR -> { // this type is in return type
             val start = "returnType:"
-            val fqName = desc.substring(desc.indexOf(start) + start.length, desc.lastIndexOf("[") - 1)
-            mutableListOf(Type.getType(fqName.fqNameToDescriptor()))
+            val typeName = desc.substring(desc.indexOf(start) + start.length, desc.lastIndexOf("[") - 1)
+            mutableListOf(TypeAdapter.fromString(typeName))
         }
         MethodKind.INSTANCE -> { // this type is the first parameter type
             val start = "\$this:"
-            val fqName = desc.substring(desc.indexOf(start) + start.length, desc.indexOf(","))
-            mutableListOf(Type.getType(fqName.fqNameToDescriptor()))
+            val typeName = desc.substring(desc.indexOf(start) + start.length, desc.indexOf(","))
+            mutableListOf(TypeAdapter.fromString(typeName))
         }
     }
 
@@ -121,7 +122,7 @@ internal class Knot8ClassBuilder(
  * @param type the type of the parameter
  * @param index the index of the parameter in the local variables stack
  */
-internal data class FunctionParameter(val name: String, val type: Type, val index: Int)
+internal data class FunctionParameter(val name: String, val type: TypeAdapter, val index: Int)
 
 /**
  * Represents the 3 method kinds with different variable stacks and parameter related to 'this'.

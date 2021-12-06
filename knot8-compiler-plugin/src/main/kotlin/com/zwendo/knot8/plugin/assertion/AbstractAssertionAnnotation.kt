@@ -1,7 +1,7 @@
 package com.zwendo.knot8.plugin.assertion
 
 import com.zwendo.knot8.plugin.*
-import com.zwendo.knot8.plugin.API_VERSION
+import com.zwendo.knot8.plugin.util.API_VERSION
 import com.zwendo.knot8.plugin.AnnotationTarget
 import org.jetbrains.org.objectweb.asm.*
 
