@@ -19,6 +19,7 @@ internal class TypeAdapter private constructor(
     val canonicalName: String = typeClass.canonicalName
 
     // typeClass specs
+    val dimensions: Int = internalName.length - internalName.trim('[').length
     val isIntEquivalent: Boolean = when (typeClass) {
         Int::class.java,
         Byte::class.java,
